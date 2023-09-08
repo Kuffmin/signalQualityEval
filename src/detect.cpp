@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <opencv2/opencv.hpp>
 #include "detect.h"
+#include "evaluate.h"
 
 const std::vector<cv::Scalar> colors = { cv::Scalar(0,0,255),cv::Scalar(255,0,0),cv::Scalar(0,255,255) };
 
@@ -115,11 +116,13 @@ void detect(cv::Mat& image, cv::dnn::Net& net, const std::vector<std::string>& c
 	}
 }
 
-int signal_quality_eval(const char* modelName, const char* imgFileName, const float conf_thresh)
+float signal_quality_eval(const char* modelName, const char* imgFileName, const char* BFDfileName, const char* PKfileName, const float thresh)
 {
 	// 字符串转换
 	std::string modelName_s = modelName;
 	std::string imgFileName_s = imgFileName;
+	std::string BFDfileName_s = BFDfileName;
+	std::string PKfileName_s = PKfileName;
 
 	// 定义标签
 	std::vector<std::string> class_list;
@@ -165,7 +168,18 @@ int signal_quality_eval(const char* modelName, const char* imgFileName, const fl
 	}
 
 	int result = confidence_sum / file_num * 100;
-	return result;
+
+	// 如果深度学习得分低于75，则直接输出得分；否则，再执行evaluate()
+	if (result < thresh * 100)
+	{
+		return result;
+	}
+	else
+	{
+		float resultEvaluate = evaluate(BFDfileName_s, PKfileName_s);
+		return resultEvaluate;
+	}
+
 }
 
 
@@ -227,6 +241,6 @@ int main(int argc,char **argv)
 
 int getVersion(char* version, int len)
 {
-	const char* ver = "1.0.0.2";
+	const char* ver = "2.0.0.1";
 	return strcpy_s(version, len, ver);
 }

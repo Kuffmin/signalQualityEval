@@ -1,4 +1,4 @@
-extern "C" __declspec(dllexport) int __stdcall signal_quality_eval(const char* modelName, const char* imgFilePath, const float conf_thresh);
+extern "C" __declspec(dllexport) float __stdcall signal_quality_eval(const char* modelName, const char* imgFileName, const char* BFDfileName, const char* PKfileName, const float thresh);
 extern "C" __declspec(dllexport) int __stdcall getVersion(char* version, int len);
 
 #define DEMENSIONS 7
@@ -23,11 +23,13 @@ struct Detection
 
 *     modelName:存放模型的路径
 *     imgFileName:存放图像的路径
-*     conf_thresh:置信度阈值，设为0.8
+*     BFDfileName:存放BFD文件的路径
+*     PKfileName:存放PK文件的路径
+*     conf_thresh:置信度阈值，设为0.75
 *Return : 质量评价分数0—100
 
 */
-int signal_quality_eval(const char* modelName, const char* imgFileName, const float conf_thresh);
+float signal_quality_eval(const char* modelName, const char* imgFileName, const char* BFDfileName, const char* PKfileName, const float thresh);
 
 /*
 	获取算法版本号
