@@ -126,6 +126,7 @@ float signal_quality_eval(const char* modelName, const char* imgFileName, const 
 
 	// 定义标签
 	std::vector<std::string> class_list;
+	class_list.push_back("CLUTTER");
 	class_list.push_back("QRS");
 	class_list.push_back("T");
 
@@ -146,7 +147,7 @@ float signal_quality_eval(const char* modelName, const char* imgFileName, const 
 	}
 
 	int count = 0;
-	float confidence_sum = 0.0f;
+	float clutter_num = 0.0f;
 	for (int i = 0; i < file_num; ++i)
 	{
 		std::vector<Detection> output;
@@ -154,6 +155,27 @@ float signal_quality_eval(const char* modelName, const char* imgFileName, const 
 		detect(img, net, class_list, output);
 
 		int detections = output.size();
+
+#if OPENCV_DEBUG
+		std::string savePath = "F:\\signal_quality_evaluation_3\\temp\\";
+		for (int j = 0; j < detections; ++j)
+		{
+			auto detection = output[j];
+			auto box = detection.box;
+			auto classID = detection.class_id;
+			auto confidence = detection.confidence;
+			auto color = colors[classID % colors.size()];
+			cv::rectangle(img, box, color, 3);
+
+			cv::rectangle(img, cv::Point(box.x, box.y - 20), cv::Point(box.x + box.width, box.y), color, cv::FILLED);
+			cv::putText(img, class_list[classID].c_str(), cv::Point(box.x, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
+			std::string conf = std::to_string(confidence);
+			cv::putText(img, conf.c_str(), cv::Point(box.x + 150, box.y - 5), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 0, 0), 2);
+		}
+		cv::imwrite(savePath.append(std::to_string(i)).append(".png"), img);
+#endif
+
+
 		for (int j = 0; j < detections; ++j)
 		{
 			auto detection = output[j];
@@ -162,23 +184,26 @@ float signal_quality_eval(const char* modelName, const char* imgFileName, const 
 
 			if (classID == 0)
 			{
-				confidence_sum += confidence;
+				clutter_num ++;
+				break;
 			}
 		}
 	}
 
-	int result = confidence_sum / file_num * 100;
+	int result = (file_num - clutter_num) / file_num * 100;
 
-	// 如果深度学习得分低于75，则直接输出得分；否则，再执行evaluate()
-	if (result < thresh * 100)
-	{
-		return result;
-	}
-	else
-	{
-		float resultEvaluate = evaluate(BFDfileName_s, PKfileName_s);
-		return resultEvaluate;
-	}
+	return result;
+
+	//// 如果深度学习得分低于75，则直接输出得分；否则，再执行evaluate()
+	//if (result < thresh * 100)
+	//{
+	//	return result;
+	//}
+	//else
+	//{
+	//	float resultEvaluate = evaluate(BFDfileName_s, PKfileName_s);
+	//	return resultEvaluate;
+	//}
 
 }
 

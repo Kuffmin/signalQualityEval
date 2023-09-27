@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	// 加载模型
 	char* modelName = "./model/best.onnx";
 
-	char* filePath = "D:\\MCGData";        // 输入样本存放路径
+	char* filePath = "D:\\MCGData_1";        // 输入样本存放路径
 
 	std::vector<std::string> files;
 
@@ -98,8 +98,9 @@ int main(int argc, char** argv)
 
 		QueryPerformanceCounter(&end);
 		double costTime = (end.QuadPart - begin.QuadPart) * 1000.0f / freq.QuadPart;
-		std::cout << "Detect process cost time:" << costTime << std::endl;
-		std::cout << name << " Signal quality eval result is:" << result << std::endl;
+		//std::cout << "Detect process cost time:" << costTime << std::endl;
+		std::cout << result << std::endl;
+
 	}
 	
 	return 0;
