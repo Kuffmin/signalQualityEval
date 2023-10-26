@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	// 加载模型
 	char* modelName = "./model/best.onnx";
 
-	char* filePath = "D:\\MCGData_1";        // 输入样本存放路径
+	char* filePath = "D:\\MCGData";        // 输入样本存放路径
 
 	std::vector<std::string> files;
 
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 	char str[30];
 	int size = files.size();
 
-	for (int i = 2; i < size; i++)
+	for (int i = 51; i < size; i++)
 	{
 		std::vector<std::string> fileTemp;
 		getFiles(files[i], fileTemp);
@@ -93,13 +93,13 @@ int main(int argc, char** argv)
 		const char* imgFileName = a.c_str();
 		const char* bfdFileName = BFDfile[0].c_str();
 		const char* pkFileName = PKfile[0].c_str();
-		const float thresh = 0.75f;
+		const float thresh = 0.7f;
 		float result = signal_quality_eval(modelName, imgFileName, bfdFileName, pkFileName, thresh);
 
 		QueryPerformanceCounter(&end);
 		double costTime = (end.QuadPart - begin.QuadPart) * 1000.0f / freq.QuadPart;
 		//std::cout << "Detect process cost time:" << costTime << std::endl;
-		std::cout << result << std::endl;
+		std::cout << name << ":"<< result << std::endl;
 
 	}
 	

@@ -26,146 +26,13 @@ void preprocessingDataNoFilter(std::vector<float>& src, int channelNum, int samp
 	}
 }
 
-// 计算各个通道的幅值
-void calcAllChannelsAmp(std::vector<std::vector<float>>& data, int channelNum, int sampleRate, std::vector<float>& amplitude)
-{
-	int i = 0, j = 0;
-	float ampMax = 0.0f;
-	for (i = 0; i < channelNum; i++)
-	{
-		ampMax = 0.0f;
-		for (j = 0; j < sampleRate; j++)
-		{
-			if (abs(data[i][j]) > ampMax)
-			{
-				ampMax = abs(data[i][j]);
-			}
-		}
-		amplitude.push_back(ampMax);
-	}
-}
-
-bool compare(float a, float b)
-{
-	return a > b;
-}
-// 对各通道幅值进行排序，幅值是否小于阈值作判断
-void sortChannelsByAmp(std::vector<float>& amplitude, std::vector<int>& channelIndex, int* channelNum)
-{
-	std::vector<int> idx(amplitude.size());
-	iota(idx.begin(), idx.end(), 0);
-	sort(idx.begin(), idx.end(), [&amplitude](int i1, int i2) {return amplitude[i1] > amplitude[i2]; });
-	sort(amplitude.begin(), amplitude.end(), compare);
-
-	// 不考虑幅值小于10的通道
-	for (int i = amplitude.size() - 1; i >= 0; i--)
-	{
-		if (amplitude[i] < 5.0f)
-		{
-			idx.pop_back();
-		}
-	}
-	channelIndex.assign(idx.begin(), idx.end());
-	*channelNum = channelIndex.size();
-}
-
-// 根据传感器位置，将内部和边缘通道区分开
-void judgeInterAndEdge(std::vector<int>& channelIndex, std::vector<int>& channelFlag, std::vector<int>& interChannels, std::vector<int>& edgeChannels)
-{
-	int interFlag[16] = { 7, 8, 9, 10, 13, 14, 15, 16, 19, 20, 21, 22, 25, 26, 27, 28 };
-	int flag = 0;
-	for (int i = 0; i < channelIndex.size(); i++)
-	{
-		flag = 0;
-		for (int j = 0; j < 16; j++)
-		{
-			if (channelIndex[i] == interFlag[j])
-			{
-				interChannels.push_back(channelIndex[i]);
-				channelFlag.push_back(1);
-				flag = 1;
-				break;
-			}
-		}
-		if (!flag)
-		{
-			edgeChannels.push_back(channelIndex[i]);
-			channelFlag.push_back(0);
-		}
-	}
-}
-
-// 判断是否存在幅值偏离正常值的通道出现
-int judgeExtremeChannels(std::vector<float>& amplitude, std::vector<int>& channelIndex)
-{
-	std::vector<float> amp16;
-	for (int i = 0; i < 16; i++)
-	{
-		amp16.push_back(amplitude[i]);
-	}
-	float ampMean = mean(amp16);
-	float ampStd = sqrtf(var(amp16, 1));
-	float thresh = ampMean + 3 * ampStd;                //阈值为均值+3倍的标准差
-
-	for (int i = 0; i < 16; i++)
-	{
-		if (amp16[i] > thresh)
-		{
-			return 1;
-			break;
-		}
-	}
-	return 0;
-}
-
-int preProcessing(std::string BFDname, std::vector<int> &channelIndex, std::vector<int>& channelFlag, std::vector<int> &interChannels, std::vector<int> &edgeChannels, int *extremeFlag)
-{
-	// 读取.BFD文件和.PK文件
-	std::ifstream bfd;
-	bfd.open(BFDname, std::ios::binary);
-
-	std::vector<float> data;
-
-	if (!bfd)
-	{
-		std::cerr << "Failed to open BFD file." << std::endl;
-		return -1;
-	}
-
-	float d = 0.0f;
-	while (bfd.peek() != EOF) {
-		bfd.read((char*)&d, sizeof(d));
-		data.push_back(d);
-	}
-	bfd.close();
-
-	// 预处理数据
-	int channelNum = 36;
-	int sampleRate = 1000;
-	std::vector<std::vector<float>> data1(36);
-	preprocessingDataNoFilter(data, channelNum, sampleRate, data1);
-
-	std::vector<float> amplitude;
-	calcAllChannelsAmp(data1, channelNum, sampleRate, amplitude);
-	data1.clear();
-
-	sortChannelsByAmp(amplitude, channelIndex, &channelNum);
-
-	*extremeFlag = 0;
-	//*extremeFlag = judgeExtremeChannels(amplitude, channelIndex);
-
-	judgeInterAndEdge(channelIndex, channelFlag, interChannels, edgeChannels);
-	amplitude.clear();
-	return 0;
-}
-
-float evaluate(std::string BFDname, std::string PKname)
+int main(int argc, char** argv)
 {
 	// 读取.BFD文件和.PK文件
 	std::ifstream bfd;
 	std::ifstream peak;
-	bfd.open(BFDname, std::ios::binary);
-	peak.open(PKname, std::ios::binary);
+	bfd.open("D:\\齐鲁数据离线分析结果\\H0004-刘珊珊\\20220530 091407\\20220530 091407.BFD", std::ios::binary);
+	peak.open("D:\\齐鲁数据离线分析结果\\H0004-刘珊珊\\20220530 091407\\20220530 091407.PK", std::ios::binary);
 
 	std::vector<float> data;
 	std::vector<int> time;
@@ -173,13 +40,13 @@ float evaluate(std::string BFDname, std::string PKname)
 	if (!bfd)
 	{
 		std::cerr << "Failed to open BFD file." << std::endl;
-		return -1;
+		return 1;
 	}
 
 	if (!peak)
 	{
 		std::cerr << "Failed to open PEAK file." << std::endl;
-		return -1;
+		return 1;
 	}
 
 	float d = 0.0f;
@@ -489,6 +356,11 @@ float evaluate(std::string BFDname, std::string PKname)
 	float snrMax = *max_element(datasnr.begin(), datasnr.end());
 	float snrMin = *min_element(datasnr.begin(), datasnr.end());
 	Fea.push_back(snrMax - snrMin);
+
+	for (i = 0; i < Fea.size(); i++)
+	{
+		cout << Fea[i] << endl;
+	}
 	
 	float OriScore = 0.0f;
 	if (Fea.size() != beta.size())
@@ -502,6 +374,5 @@ float evaluate(std::string BFDname, std::string PKname)
 	OriScore = OriScore + bias;
 	float badScore = 100.0f / (1 + exp(-2 * OriScore));
 	float goodScore = 100.0f - badScore;
-	
-	return goodScore;
+	return 0;
 }

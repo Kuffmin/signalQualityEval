@@ -32,3 +32,5 @@ const std::vector<float> beta = { 0.326613518324467
 const float bias = 66.709503013590690;
 
 float evaluate(std::string BFDname, std::string PKname);
+
+int preProcessing(std::string BFDname, std::vector<int>& channelIndex, std::vector<int>& channelFlag, std::vector<int>& interChannels, std::vector<int>& edgeChannels, int *extremeFlag);
